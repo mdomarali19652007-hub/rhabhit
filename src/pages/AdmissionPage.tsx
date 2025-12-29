@@ -1,0 +1,521 @@
+import { useEffect, useState } from "react";
+import { Helmet } from "react-helmet-async";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { CheckCircle, ArrowRight, FileText } from "lucide-react";
+import { z } from "zod";
+
+const admissionSchema = z.object({
+  student_name: z.string().min(2, "নাম আবশ্যক"),
+  father_name: z.string().min(2, "পিতার নাম আবশ্যক"),
+  mother_name: z.string().min(2, "মাতার নাম আবশ্যক"),
+  date_of_birth: z.string().min(1, "জন্ম তারিখ আবশ্যক"),
+  gender: z.string().min(1, "লিঙ্গ নির্বাচন করুন"),
+  phone: z.string().min(11, "সঠিক ফোন নম্বর দিন"),
+  present_address: z.string().min(10, "বর্তমান ঠিকানা আবশ্যক"),
+  desired_department: z.string().min(1, "বিভাগ নির্বাচন করুন"),
+});
+
+interface Department {
+  id: string;
+  name: string;
+  name_en: string | null;
+}
+
+const AdmissionPage = () => {
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [applicationNumber, setApplicationNumber] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState({
+    student_name: "",
+    father_name: "",
+    mother_name: "",
+    date_of_birth: "",
+    gender: "",
+    blood_group: "",
+    religion: "",
+    phone: "",
+    email: "",
+    present_address: "",
+    permanent_address: "",
+    guardian_name: "",
+    guardian_phone: "",
+    guardian_relation: "",
+    ssc_board: "",
+    ssc_roll: "",
+    ssc_year: "",
+    ssc_gpa: "",
+    ssc_group: "",
+    hsc_board: "",
+    hsc_roll: "",
+    hsc_year: "",
+    hsc_gpa: "",
+    hsc_group: "",
+    desired_department: "",
+    admission_session: "২০২৫-২০২৬",
+  });
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      const { data } = await supabase
+        .from("departments")
+        .select("id, name, name_en")
+        .eq("is_active", true)
+        .order("display_order");
+      
+      if (data) setDepartments(data);
+    };
+
+    fetchDepartments();
+  }, []);
+
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+
+    const result = admissionSchema.safeParse(formData);
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          fieldErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setErrors(fieldErrors);
+      toast.error("সকল আবশ্যক তথ্য পূরণ করুন");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("admissions")
+        .insert([{
+          student_name: formData.student_name,
+          father_name: formData.father_name,
+          mother_name: formData.mother_name,
+          date_of_birth: formData.date_of_birth,
+          gender: formData.gender,
+          blood_group: formData.blood_group || null,
+          religion: formData.religion || null,
+          phone: formData.phone,
+          email: formData.email || null,
+          present_address: formData.present_address,
+          permanent_address: formData.permanent_address || null,
+          guardian_name: formData.guardian_name || null,
+          guardian_phone: formData.guardian_phone || null,
+          guardian_relation: formData.guardian_relation || null,
+          ssc_board: formData.ssc_board || null,
+          ssc_roll: formData.ssc_roll || null,
+          ssc_year: formData.ssc_year ? parseInt(formData.ssc_year) : null,
+          ssc_gpa: formData.ssc_gpa ? parseFloat(formData.ssc_gpa) : null,
+          ssc_group: formData.ssc_group || null,
+          hsc_board: formData.hsc_board || null,
+          hsc_roll: formData.hsc_roll || null,
+          hsc_year: formData.hsc_year ? parseInt(formData.hsc_year) : null,
+          hsc_gpa: formData.hsc_gpa ? parseFloat(formData.hsc_gpa) : null,
+          hsc_group: formData.hsc_group || null,
+          desired_department: formData.desired_department,
+          admission_year: new Date().getFullYear(),
+          admission_session: formData.admission_session,
+        }])
+        .select("application_number")
+        .single();
+
+      if (error) throw error;
+
+      setApplicationNumber(data.application_number);
+      setIsSuccess(true);
+      toast.success("আবেদন সফলভাবে জমা হয়েছে!");
+    } catch (error) {
+      console.error("Submission error:", error);
+      toast.error("আবেদন জমা দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+    }
+
+    setIsSubmitting(false);
+  };
+
+  if (isSuccess) {
+    return (
+      <>
+        <Helmet>
+          <title>আবেদন সফল | রাজশাহী হাদিত মহাবিদ্যালয়</title>
+        </Helmet>
+        <div className="min-h-screen bg-background">
+          <Header />
+          <main className="section-padding">
+            <div className="container-main">
+              <div className="max-w-lg mx-auto text-center">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                  <CheckCircle className="w-10 h-10 text-emerald-500" />
+                </div>
+                <h1 className="font-heading text-3xl font-bold text-foreground mb-4">
+                  আবেদন সফল হয়েছে!
+                </h1>
+                <p className="text-muted-foreground mb-6">
+                  আপনার ভর্তি আবেদন সফলভাবে জমা হয়েছে। আপনার আবেদন নম্বর সংরক্ষণ করুন।
+                </p>
+                <div className="card-elevated p-6 mb-8">
+                  <p className="text-sm text-muted-foreground mb-2">আবেদন নম্বর</p>
+                  <p className="font-heading text-2xl font-bold text-primary">{applicationNumber}</p>
+                </div>
+                <Button onClick={() => window.location.href = "/"}>
+                  হোমে ফিরুন
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Helmet>
+        <title>ভর্তি আবেদন | রাজশাহী হাদিত মহাবিদ্যালয়</title>
+        <meta name="description" content="রাজশাহী হাদিত মহাবিদ্যালয়ে ভর্তি আবেদন করুন। অনলাইন আবেদন ফরম পূরণ করুন।" />
+      </Helmet>
+
+      <div className="min-h-screen bg-background">
+        <Header />
+        
+        {/* Hero */}
+        <section className="bg-primary text-primary-foreground py-16">
+          <div className="container-main text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-foreground/10 mb-4">
+              <FileText className="w-5 h-5" />
+              <span className="text-sm font-medium">অনলাইন আবেদন</span>
+            </div>
+            <h1 className="font-heading text-3xl md:text-4xl font-bold mb-4">
+              ভর্তি আবেদন ফরম
+            </h1>
+            <p className="text-primary-foreground/80 max-w-2xl mx-auto">
+              সকল তথ্য সঠিকভাবে পূরণ করুন। * চিহ্নিত ঘরগুলো আবশ্যক।
+            </p>
+          </div>
+        </section>
+
+        {/* Form */}
+        <section className="section-padding">
+          <div className="container-main">
+            <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+              {/* Personal Information */}
+              <div className="card-elevated p-6 md:p-8 mb-6">
+                <h2 className="font-heading text-xl font-bold text-foreground mb-6 pb-4 border-b border-border">
+                  ব্যক্তিগত তথ্য
+                </h2>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <Label>শিক্ষার্থীর নাম *</Label>
+                    <Input
+                      value={formData.student_name}
+                      onChange={(e) => handleChange("student_name", e.target.value)}
+                      placeholder="পূর্ণ নাম (বাংলায়)"
+                      className="mt-2"
+                    />
+                    {errors.student_name && <p className="text-sm text-destructive mt-1">{errors.student_name}</p>}
+                  </div>
+                  <div>
+                    <Label>পিতার নাম *</Label>
+                    <Input
+                      value={formData.father_name}
+                      onChange={(e) => handleChange("father_name", e.target.value)}
+                      placeholder="পিতার পূর্ণ নাম"
+                      className="mt-2"
+                    />
+                    {errors.father_name && <p className="text-sm text-destructive mt-1">{errors.father_name}</p>}
+                  </div>
+                  <div>
+                    <Label>মাতার নাম *</Label>
+                    <Input
+                      value={formData.mother_name}
+                      onChange={(e) => handleChange("mother_name", e.target.value)}
+                      placeholder="মাতার পূর্ণ নাম"
+                      className="mt-2"
+                    />
+                    {errors.mother_name && <p className="text-sm text-destructive mt-1">{errors.mother_name}</p>}
+                  </div>
+                  <div>
+                    <Label>জন্ম তারিখ *</Label>
+                    <Input
+                      type="date"
+                      value={formData.date_of_birth}
+                      onChange={(e) => handleChange("date_of_birth", e.target.value)}
+                      className="mt-2"
+                    />
+                    {errors.date_of_birth && <p className="text-sm text-destructive mt-1">{errors.date_of_birth}</p>}
+                  </div>
+                  <div>
+                    <Label>লিঙ্গ *</Label>
+                    <Select value={formData.gender} onValueChange={(v) => handleChange("gender", v)}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="নির্বাচন করুন" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="পুরুষ">পুরুষ</SelectItem>
+                        <SelectItem value="মহিলা">মহিলা</SelectItem>
+                        <SelectItem value="অন্যান্য">অন্যান্য</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.gender && <p className="text-sm text-destructive mt-1">{errors.gender}</p>}
+                  </div>
+                  <div>
+                    <Label>রক্তের গ্রুপ</Label>
+                    <Select value={formData.blood_group} onValueChange={(v) => handleChange("blood_group", v)}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="নির্বাচন করুন" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map((g) => (
+                          <SelectItem key={g} value={g}>{g}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>ধর্ম</Label>
+                    <Select value={formData.religion} onValueChange={(v) => handleChange("religion", v)}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="নির্বাচন করুন" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ইসলাম">ইসলাম</SelectItem>
+                        <SelectItem value="হিন্দু">হিন্দু</SelectItem>
+                        <SelectItem value="বৌদ্ধ">বৌদ্ধ</SelectItem>
+                        <SelectItem value="খ্রিস্টান">খ্রিস্টান</SelectItem>
+                        <SelectItem value="অন্যান্য">অন্যান্য</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="card-elevated p-6 md:p-8 mb-6">
+                <h2 className="font-heading text-xl font-bold text-foreground mb-6 pb-4 border-b border-border">
+                  যোগাযোগের তথ্য
+                </h2>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <Label>মোবাইল নম্বর *</Label>
+                    <Input
+                      value={formData.phone}
+                      onChange={(e) => handleChange("phone", e.target.value)}
+                      placeholder="01XXXXXXXXX"
+                      className="mt-2"
+                    />
+                    {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone}</p>}
+                  </div>
+                  <div>
+                    <Label>ইমেইল</Label>
+                    <Input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleChange("email", e.target.value)}
+                      placeholder="your@email.com"
+                      className="mt-2"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label>বর্তমান ঠিকানা *</Label>
+                    <Textarea
+                      value={formData.present_address}
+                      onChange={(e) => handleChange("present_address", e.target.value)}
+                      placeholder="গ্রাম/রোড, ডাকঘর, উপজেলা, জেলা"
+                      className="mt-2"
+                      rows={2}
+                    />
+                    {errors.present_address && <p className="text-sm text-destructive mt-1">{errors.present_address}</p>}
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label>স্থায়ী ঠিকানা</Label>
+                    <Textarea
+                      value={formData.permanent_address}
+                      onChange={(e) => handleChange("permanent_address", e.target.value)}
+                      placeholder="গ্রাম/রোড, ডাকঘর, উপজেলা, জেলা"
+                      className="mt-2"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <Label>অভিভাবকের নাম</Label>
+                    <Input
+                      value={formData.guardian_name}
+                      onChange={(e) => handleChange("guardian_name", e.target.value)}
+                      placeholder="অভিভাবকের পূর্ণ নাম"
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>অভিভাবকের মোবাইল</Label>
+                    <Input
+                      value={formData.guardian_phone}
+                      onChange={(e) => handleChange("guardian_phone", e.target.value)}
+                      placeholder="01XXXXXXXXX"
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Academic Information */}
+              <div className="card-elevated p-6 md:p-8 mb-6">
+                <h2 className="font-heading text-xl font-bold text-foreground mb-6 pb-4 border-b border-border">
+                  শিক্ষাগত যোগ্যতা
+                </h2>
+                
+                {/* SSC */}
+                <h3 className="font-semibold text-foreground mb-4">এসএসসি / সমমান</h3>
+                <div className="grid md:grid-cols-4 gap-4 mb-6">
+                  <div>
+                    <Label>বোর্ড</Label>
+                    <Input
+                      value={formData.ssc_board}
+                      onChange={(e) => handleChange("ssc_board", e.target.value)}
+                      placeholder="রাজশাহী"
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>রোল নম্বর</Label>
+                    <Input
+                      value={formData.ssc_roll}
+                      onChange={(e) => handleChange("ssc_roll", e.target.value)}
+                      placeholder="123456"
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>পাসের সন</Label>
+                    <Input
+                      value={formData.ssc_year}
+                      onChange={(e) => handleChange("ssc_year", e.target.value)}
+                      placeholder="2024"
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>জিপিএ</Label>
+                    <Input
+                      value={formData.ssc_gpa}
+                      onChange={(e) => handleChange("ssc_gpa", e.target.value)}
+                      placeholder="5.00"
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+
+                {/* HSC */}
+                <h3 className="font-semibold text-foreground mb-4">এইচএসসি / সমমান (যদি থাকে)</h3>
+                <div className="grid md:grid-cols-4 gap-4">
+                  <div>
+                    <Label>বোর্ড</Label>
+                    <Input
+                      value={formData.hsc_board}
+                      onChange={(e) => handleChange("hsc_board", e.target.value)}
+                      placeholder="রাজশাহী"
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>রোল নম্বর</Label>
+                    <Input
+                      value={formData.hsc_roll}
+                      onChange={(e) => handleChange("hsc_roll", e.target.value)}
+                      placeholder="123456"
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>পাসের সন</Label>
+                    <Input
+                      value={formData.hsc_year}
+                      onChange={(e) => handleChange("hsc_year", e.target.value)}
+                      placeholder="2026"
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>জিপিএ</Label>
+                    <Input
+                      value={formData.hsc_gpa}
+                      onChange={(e) => handleChange("hsc_gpa", e.target.value)}
+                      placeholder="5.00"
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Admission Details */}
+              <div className="card-elevated p-6 md:p-8 mb-6">
+                <h2 className="font-heading text-xl font-bold text-foreground mb-6 pb-4 border-b border-border">
+                  ভর্তি সংক্রান্ত তথ্য
+                </h2>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <Label>পছন্দের বিভাগ *</Label>
+                    <Select value={formData.desired_department} onValueChange={(v) => handleChange("desired_department", v)}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="বিভাগ নির্বাচন করুন" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.name}>
+                            {dept.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.desired_department && <p className="text-sm text-destructive mt-1">{errors.desired_department}</p>}
+                  </div>
+                  <div>
+                    <Label>শিক্ষাবর্ষ</Label>
+                    <Input
+                      value={formData.admission_session}
+                      onChange={(e) => handleChange("admission_session", e.target.value)}
+                      placeholder="২০২৫-২০২৬"
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <div className="text-center">
+                <Button type="submit" variant="hero" size="xl" disabled={isSubmitting}>
+                  {isSubmitting ? "জমা হচ্ছে..." : "আবেদন জমা দিন"}
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <Footer />
+      </div>
+    </>
+  );
+};
+
+export default AdmissionPage;
