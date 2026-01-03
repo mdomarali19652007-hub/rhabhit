@@ -1,7 +1,10 @@
 import { ArrowRight, BookOpen, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground">
       {/* Background Pattern */}
@@ -34,11 +37,11 @@ const HeroSection = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-              <Button variant="hero" size="xl">
+              <Button variant="hero" size="xl" onClick={() => navigate("/admission")}>
                 ভর্তি আবেদন করুন
                 <ArrowRight className="w-5 h-5" />
               </Button>
-              <Button variant="hero-outline" size="xl">
+              <Button variant="hero-outline" size="xl" onClick={() => navigate("/about")}>
                 আরও জানুন
               </Button>
             </div>
