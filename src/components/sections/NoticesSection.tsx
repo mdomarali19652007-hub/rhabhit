@@ -1,45 +1,66 @@
 import { Bell, ArrowRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const notices = [
-  {
-    id: 1,
-    title: "২০২৬ সালের ভর্তি বিজ্ঞপ্তি প্রকাশ",
-    date: "২৮ ডিসেম্বর, ২০২৫",
-    isUrgent: true,
-    category: "ভর্তি",
-  },
-  {
-    id: 2,
-    title: "শীতকালীন ছুটির নোটিশ",
-    date: "২৫ ডিসেম্বর, ২০২৫",
-    isUrgent: false,
-    category: "সাধারণ",
-  },
-  {
-    id: 3,
-    title: "অনার্স ৩য় বর্ষ ফর্ম ফিলাপের সময়সীমা বৃদ্ধি",
-    date: "২২ ডিসেম্বর, ২০২৫",
-    isUrgent: true,
-    category: "পরীক্ষা",
-  },
-  {
-    id: 4,
-    title: "বার্ষিক ক্রীড়া প্রতিযোগিতার সময়সূচী",
-    date: "২০ ডিসেম্বর, ২০২৫",
-    isUrgent: false,
-    category: "সাংস্কৃতিক",
-  },
-  {
-    id: 5,
-    title: "বৃত্তি প্রাপ্ত শিক্ষার্থীদের তালিকা প্রকাশ",
-    date: "১৮ ডিসেম্বর, ২০২৫",
-    isUrgent: false,
-    category: "বৃত্তি",
-  },
-];
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const NoticesSection = () => {
+  const navigate = useNavigate();
+
+  const { data: notices = [] } = useQuery({
+    queryKey: ["homepage-notices"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notices")
+        .select("*")
+        .eq("is_published", true)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fallback notices if database is empty
+  const displayNotices = notices.length > 0 ? notices : [
+    {
+      id: "1",
+      title: "২০২৬ সালের ভর্তি বিজ্ঞপ্তি প্রকাশ",
+      created_at: new Date().toISOString(),
+      is_urgent: true,
+      category: "admission",
+    },
+    {
+      id: "2",
+      title: "শীতকালীন ছুটির নোটিশ",
+      created_at: new Date().toISOString(),
+      is_urgent: false,
+      category: "general",
+    },
+  ];
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("bn-BD", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const getCategoryLabel = (category: string) => {
+    const labels: Record<string, string> = {
+      general: "সাধারণ",
+      admission: "ভর্তি",
+      exam: "পরীক্ষা",
+      result: "ফলাফল",
+      event: "অনুষ্ঠান",
+      scholarship: "বৃত্তি",
+      urgent: "জরুরি",
+    };
+    return labels[category] || "সাধারণ";
+  };
+
   return (
     <section id="notices" className="section-padding bg-muted/30">
       <div className="container-main">
@@ -52,27 +73,27 @@ const NoticesSection = () => {
               সর্বশেষ বিজ্ঞপ্তি
             </h2>
           </div>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => navigate("/notices")}>
             সকল নোটিশ দেখুন
             <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
 
         <div className="grid gap-4">
-          {notices.map((notice, index) => (
-            <a
+          {displayNotices.map((notice, index) => (
+            <button
               key={notice.id}
-              href="#"
-              className="card-elevated p-5 md:p-6 flex flex-col md:flex-row md:items-center gap-4 group"
+              onClick={() => navigate("/notices")}
+              className="card-elevated p-5 md:p-6 flex flex-col md:flex-row md:items-center gap-4 group text-left w-full"
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               {/* Icon */}
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                notice.isUrgent 
+                notice.is_urgent 
                   ? "bg-destructive/10 text-destructive" 
                   : "bg-primary/10 text-primary"
               }`}>
-                {notice.isUrgent ? (
+                {notice.is_urgent ? (
                   <AlertCircle className="w-6 h-6" />
                 ) : (
                   <Bell className="w-6 h-6" />
@@ -82,13 +103,13 @@ const NoticesSection = () => {
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  {notice.isUrgent && (
+                  {notice.is_urgent && (
                     <span className="px-2 py-0.5 rounded text-xs font-medium bg-destructive text-destructive-foreground">
                       জরুরি
                     </span>
                   )}
                   <span className="px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground">
-                    {notice.category}
+                    {getCategoryLabel(notice.category || "general")}
                   </span>
                 </div>
                 <h3 className="font-heading font-semibold text-foreground text-lg group-hover:text-primary transition-colors truncate">
@@ -99,11 +120,11 @@ const NoticesSection = () => {
               {/* Date & Arrow */}
               <div className="flex items-center gap-4 md:flex-shrink-0">
                 <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  {notice.date}
+                  {formatDate(notice.created_at)}
                 </span>
                 <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
-            </a>
+            </button>
           ))}
         </div>
       </div>

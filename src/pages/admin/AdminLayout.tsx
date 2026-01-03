@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -11,10 +11,10 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  Home
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const sidebarLinks = [
@@ -32,23 +32,34 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    if (!loading && (!user || !isAdmin)) {
-      navigate("/auth");
+    // Only redirect after loading is complete
+    if (!loading) {
+      if (!user) {
+        // Not logged in, redirect to auth with return path
+        navigate("/auth", { state: { from: location.pathname } });
+      } else if (!isAdmin) {
+        // Logged in but not admin, redirect to home
+        navigate("/");
+      } else {
+        // User is admin, allow access
+        setAuthChecked(true);
+      }
     }
-  }, [user, loading, isAdmin, navigate]);
+  }, [user, loading, isAdmin, navigate, location.pathname]);
 
-  if (loading) {
+  // Show loading while checking auth
+  if (loading || !authChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground">লোড হচ্ছে...</p>
+        </div>
       </div>
     );
-  }
-
-  if (!user || !isAdmin) {
-    return null;
   }
 
   const handleSignOut = async () => {
@@ -103,7 +114,15 @@ const AdminLayout = () => {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-border space-y-2">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
+              onClick={() => navigate("/")}
+            >
+              <Home className="w-5 h-5 mr-3" />
+              ওয়েবসাইটে ফিরুন
+            </Button>
             <Button 
               variant="ghost" 
               className="w-full justify-start text-muted-foreground hover:text-destructive"

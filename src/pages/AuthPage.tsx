@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,8 @@ const signupSchema = loginSchema.extend({
 
 const AuthPage = () => {
   const navigate = useNavigate();
-  const { user, loading, signIn, signUp } = useAuth();
+  const location = useLocation();
+  const { user, loading, isAdmin, signIn, signUp } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -34,6 +35,9 @@ const AuthPage = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Get the intended destination from location state, or default to admin if admin, else home
+  const from = (location.state as { from?: string })?.from;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -42,7 +46,16 @@ const AuthPage = () => {
     );
   }
 
+  // If user is logged in, redirect appropriately
   if (user) {
+    // If there was a specific destination, go there
+    if (from) {
+      return <Navigate to={from} replace />;
+    }
+    // If admin, go to admin panel; otherwise go home
+    if (isAdmin) {
+      return <Navigate to="/admin" replace />;
+    }
     return <Navigate to="/" replace />;
   }
 
@@ -75,7 +88,7 @@ const AuthPage = () => {
           }
         } else {
           toast.success("সফলভাবে লগইন হয়েছে");
-          navigate("/");
+          // Navigation will happen via the redirect logic above after auth state updates
         }
       } else {
         const result = signupSchema.safeParse(formData);
@@ -99,8 +112,8 @@ const AuthPage = () => {
             toast.error("সাইন আপ ব্যর্থ হয়েছে");
           }
         } else {
-          toast.success("অ্যাকাউন্ট তৈরি হয়েছে। লগইন করুন।");
-          setIsLogin(true);
+          toast.success("অ্যাকাউন্ট তৈরি হয়েছে! লগইন করা হচ্ছে...");
+          // Auto-login after signup since auto-confirm is enabled
         }
       }
     } catch (err) {
@@ -135,7 +148,7 @@ const AuthPage = () => {
             {isLogin ? "লগইন করুন" : "অ্যাকাউন্ট তৈরি করুন"}
           </h1>
           <p className="text-center text-muted-foreground mb-8">
-            রাজশাহী হাদিত মহাবিদ্যালয়
+            রাজশাহী হাদিত মহাবিদ্যালয় - অ্যাডমিন প্যানেল
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -1,5 +1,6 @@
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const features = [
   "অভিজ্ঞ ও যোগ্য শিক্ষক মণ্ডলী",
@@ -9,6 +10,8 @@ const features = [
 ];
 
 const AboutSection = () => {
+  const navigate = useNavigate();
+
   return (
     <section id="about" className="section-padding bg-muted/30">
       <div className="container-main">
@@ -38,7 +41,7 @@ const AboutSection = () => {
               ))}
             </ul>
 
-            <Button size="lg">
+            <Button size="lg" onClick={() => navigate("/about")}>
               বিস্তারিত জানুন
               <ArrowRight className="w-5 h-5" />
             </Button>

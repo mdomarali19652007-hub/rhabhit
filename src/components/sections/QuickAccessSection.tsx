@@ -1,4 +1,5 @@
 import { Bell, BookOpen, Calendar, Award, FileText, Phone } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const quickLinks = [
   {
@@ -6,7 +7,7 @@ const quickLinks = [
     title: "নোটিশ বোর্ড",
     titleEn: "Notice Board",
     description: "সর্বশেষ ঘোষণা ও বিজ্ঞপ্তি",
-    href: "#notices",
+    href: "/notices",
     color: "bg-accent/10 text-accent",
   },
   {
@@ -14,7 +15,7 @@ const quickLinks = [
     title: "ভর্তি তথ্য",
     titleEn: "Admission Info",
     description: "ভর্তি প্রক্রিয়া ও নির্দেশিকা",
-    href: "#admission",
+    href: "/admission",
     color: "bg-primary/10 text-primary",
   },
   {
@@ -22,7 +23,7 @@ const quickLinks = [
     title: "একাডেমিক ক্যালেন্ডার",
     titleEn: "Academic Calendar",
     description: "শিক্ষাবর্ষের সময়সূচী",
-    href: "#calendar",
+    href: "/#academics",
     color: "bg-emerald-500/10 text-emerald-600",
   },
   {
@@ -30,7 +31,7 @@ const quickLinks = [
     title: "ফলাফল",
     titleEn: "Results",
     description: "পরীক্ষার ফলাফল দেখুন",
-    href: "#results",
+    href: "/notices",
     color: "bg-blue-500/10 text-blue-600",
   },
   {
@@ -38,7 +39,7 @@ const quickLinks = [
     title: "ডাউনলোড",
     titleEn: "Downloads",
     description: "ফরম ও প্রয়োজনীয় কাগজপত্র",
-    href: "#downloads",
+    href: "/notices",
     color: "bg-purple-500/10 text-purple-600",
   },
   {
@@ -46,12 +47,26 @@ const quickLinks = [
     title: "যোগাযোগ",
     titleEn: "Contact",
     description: "আমাদের সাথে যোগাযোগ করুন",
-    href: "#contact",
+    href: "/#contact",
     color: "bg-rose-500/10 text-rose-600",
   },
 ];
 
 const QuickAccessSection = () => {
+  const navigate = useNavigate();
+
+  const handleClick = (href: string) => {
+    if (href.startsWith("/#")) {
+      const sectionId = href.replace("/#", "");
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      navigate(href);
+    }
+  };
+
   return (
     <section className="section-padding bg-background">
       <div className="container-main">
@@ -66,9 +81,9 @@ const QuickAccessSection = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
           {quickLinks.map((link, index) => (
-            <a
+            <button
               key={link.title}
-              href={link.href}
+              onClick={() => handleClick(link.href)}
               className="card-elevated p-6 text-center group cursor-pointer"
               style={{ animationDelay: `${index * 0.05}s` }}
             >
@@ -81,7 +96,7 @@ const QuickAccessSection = () => {
               <p className="text-xs text-muted-foreground hidden md:block">
                 {link.description}
               </p>
-            </a>
+            </button>
           ))}
         </div>
       </div>
