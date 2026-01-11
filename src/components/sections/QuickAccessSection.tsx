@@ -1,4 +1,4 @@
-import { Bell, BookOpen, Calendar, Award, FileText, Phone } from "lucide-react";
+import { Bell, BookOpen, Calendar, Award, FileText, Phone, ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const quickLinks = [
@@ -6,25 +6,34 @@ const quickLinks = [
     icon: Bell,
     title: "নোটিশ বোর্ড",
     titleEn: "Notice Board",
-    description: "সর্বশেষ ঘোষণা ও বিজ্ঞপ্তি",
+    description: "সর্বশেষ ঘোষণা ও বিজ্ঞপ্তি দেখুন",
     href: "/notices",
-    color: "bg-accent/10 text-accent",
+    gradient: "from-primary/10 via-primary/5 to-transparent",
+    iconBg: "bg-primary/10",
+    iconColor: "text-primary",
+    borderColor: "hover:border-primary/30",
   },
   {
     icon: BookOpen,
     title: "ভর্তি তথ্য",
     titleEn: "Admission Info",
-    description: "ভর্তি প্রক্রিয়া ও নির্দেশিকা",
+    description: "ভর্তি প্রক্রিয়া ও নির্দেশিকা জানুন",
     href: "/admission",
-    color: "bg-primary/10 text-primary",
+    gradient: "from-accent/10 via-accent/5 to-transparent",
+    iconBg: "bg-accent/10",
+    iconColor: "text-accent",
+    borderColor: "hover:border-accent/30",
   },
   {
     icon: Calendar,
     title: "একাডেমিক ক্যালেন্ডার",
     titleEn: "Academic Calendar",
-    description: "শিক্ষাবর্ষের সময়সূচী",
+    description: "শিক্ষাবর্ষের সময়সূচী দেখুন",
     href: "/#academics",
-    color: "bg-emerald-500/10 text-emerald-600",
+    gradient: "from-emerald-500/10 via-emerald-500/5 to-transparent",
+    iconBg: "bg-emerald-500/10",
+    iconColor: "text-emerald-600",
+    borderColor: "hover:border-emerald-500/30",
   },
   {
     icon: Award,
@@ -32,7 +41,10 @@ const quickLinks = [
     titleEn: "Results",
     description: "পরীক্ষার ফলাফল দেখুন",
     href: "/notices",
-    color: "bg-blue-500/10 text-blue-600",
+    gradient: "from-blue-500/10 via-blue-500/5 to-transparent",
+    iconBg: "bg-blue-500/10",
+    iconColor: "text-blue-600",
+    borderColor: "hover:border-blue-500/30",
   },
   {
     icon: FileText,
@@ -40,7 +52,10 @@ const quickLinks = [
     titleEn: "Downloads",
     description: "ফরম ও প্রয়োজনীয় কাগজপত্র",
     href: "/notices",
-    color: "bg-purple-500/10 text-purple-600",
+    gradient: "from-purple-500/10 via-purple-500/5 to-transparent",
+    iconBg: "bg-purple-500/10",
+    iconColor: "text-purple-600",
+    borderColor: "hover:border-purple-500/30",
   },
   {
     icon: Phone,
@@ -48,7 +63,10 @@ const quickLinks = [
     titleEn: "Contact",
     description: "আমাদের সাথে যোগাযোগ করুন",
     href: "/#contact",
-    color: "bg-rose-500/10 text-rose-600",
+    gradient: "from-rose-500/10 via-rose-500/5 to-transparent",
+    iconBg: "bg-rose-500/10",
+    iconColor: "text-rose-600",
+    borderColor: "hover:border-rose-500/30",
   },
 ];
 
@@ -68,34 +86,61 @@ const QuickAccessSection = () => {
   };
 
   return (
-    <section className="section-padding bg-background">
-      <div className="container-main">
-        <div className="text-center mb-12">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-4">
+    <section className="section-padding bg-background relative overflow-hidden">
+      {/* Decorative Background */}
+      <div className="absolute inset-0 bg-pattern-dots opacity-50" />
+      
+      <div className="container-main relative">
+        <div className="section-header">
+          <span className="section-badge">
+            <span className="decorative-dot" />
             দ্রুত প্রবেশ
+          </span>
+          <h2 className="font-heading text-foreground mb-5">
+            আমাদের সেবাসমূহ
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             গুরুত্বপূর্ণ তথ্য ও সেবাসমূহে সহজেই প্রবেশ করুন
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {quickLinks.map((link, index) => (
             <button
               key={link.title}
               onClick={() => handleClick(link.href)}
-              className="card-elevated p-6 text-center group cursor-pointer"
-              style={{ animationDelay: `${index * 0.05}s` }}
+              className={`group relative card-elevated p-8 text-left overflow-hidden border border-border/50 ${link.borderColor} animate-fade-in`}
+              style={{ animationDelay: `${index * 0.08}s` }}
             >
-              <div className={`w-14 h-14 mx-auto rounded-xl ${link.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                <link.icon className="w-7 h-7" />
+              {/* Gradient Background */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${link.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+              
+              <div className="relative z-10">
+                {/* Icon */}
+                <div className={`w-14 h-14 rounded-2xl ${link.iconBg} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-500`}>
+                  <link.icon className={`w-7 h-7 ${link.iconColor}`} />
+                </div>
+
+                {/* Content */}
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-heading font-bold text-xl text-foreground mb-1 group-hover:text-primary transition-colors">
+                      {link.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground/80 mb-3">
+                      {link.titleEn}
+                    </p>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      {link.description}
+                    </p>
+                  </div>
+                  
+                  {/* Arrow */}
+                  <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 flex-shrink-0">
+                    <ArrowUpRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </div>
+                </div>
               </div>
-              <h3 className="font-heading font-semibold text-foreground mb-1 text-sm md:text-base">
-                {link.title}
-              </h3>
-              <p className="text-xs text-muted-foreground hidden md:block">
-                {link.description}
-              </p>
             </button>
           ))}
         </div>

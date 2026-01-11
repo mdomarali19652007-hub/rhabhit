@@ -8,6 +8,7 @@ import AcademicsSection from "@/components/sections/AcademicsSection";
 import NoticesSection from "@/components/sections/NoticesSection";
 import FacultySection from "@/components/sections/FacultySection";
 import ContactSection from "@/components/sections/ContactSection";
+import PrincipalMessage from "@/components/sections/PrincipalMessage";
 
 const Index = () => {
   return (
@@ -31,6 +32,7 @@ const Index = () => {
           <HeroSection />
           <QuickAccessSection />
           <AboutSection />
+          <PrincipalMessage />
           <AcademicsSection />
           <NoticesSection />
           <FacultySection />
